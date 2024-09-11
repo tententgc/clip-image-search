@@ -12,10 +12,13 @@ class ImageSearchControl(ft.UserControl):
         self.folder_path_input = None
         self.search_input = None
         self.images = None
+        self.uploaded_image_path = None
+        self.query_image = None
 
     def build(self):
         self.folder_path_input = ft.TextField(label="Enter Folder Path", expand=True)
-        self.search_input = ft.TextField(label="Enter Image you want to search for", expand=True)
+        self.search_input = ft.TextField(label="Enter text you want to search for", expand=True)
+        self.query_image = ft.Image(src="", width=150, height=150)  # Placeholder for uploaded image
         self.images = ft.Row(expand=2, wrap=False, scroll="always")
 
         return ft.Column(
@@ -34,6 +37,15 @@ class ImageSearchControl(ft.UserControl):
                     ],
                 ),
                 ft.Row(
+                    controls=[
+                        ft.Text("Or upload an image for search:"),
+                        ft.FloatingActionButton(icon=ft.icons.UPLOAD_FILE, on_click=self.handle_upload_image),
+                    ],
+                ),
+                ft.Row(
+                    controls=[self.query_image],  # Display the uploaded query image
+                ),
+                ft.Row(
                     controls=[self.images],
                 ),
             ],
@@ -49,10 +61,27 @@ class ImageSearchControl(ft.UserControl):
 
     def handle_search(self, event):
         search_term = self.search_input.value
+
         if search_term and self.model:
-            search_results = self.model.search_image(search_term)
+            # Text-based search
+            search_results = self.model.search_image_by_text(search_term)
             self.update_images_display(images_to_display=search_results)
-            self.update()
+        elif self.uploaded_image_path and self.model:
+            # Image-based search
+            search_results = self.model.search_image_by_image(self.uploaded_image_path)
+            self.update_images_display(images_to_display=search_results)
+
+        self.update()
+
+    def handle_upload_image(self, event):
+        # Open file picker to select an image
+        def on_file_upload(e: ft.FileUploadEvent):
+            if e.file:
+                self.uploaded_image_path = e.file.path  # Store the path of the uploaded image
+                self.query_image.src = e.file.path  # Display the uploaded image
+                self.update()
+
+        ft.file_picker(on_file_upload=on_file_upload)
 
     def update_images_display(self, images_to_display=None):
         self.images.controls.clear()
