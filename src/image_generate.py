@@ -48,13 +48,26 @@ class ClipModel:
                 metadatas={"path": image_path, "name": Path(image_path).name}
             )
 
-    def search_image(self, search_text: str) -> List[dict]:
+    def search_image_by_text(self, search_text: str) -> List[dict]:
+        """Searches for images based on the provided text"""
         text = clip.tokenize(search_text).to(self.device)
         with torch.no_grad():
             text_features = self.model.encode_text(text).cpu().numpy()
 
         search_result = self.image_collection.query(
             query_embeddings=text_features.tolist(),
+            n_results=5
+        )
+        return search_result['metadatas'][0]
+
+    def search_image_by_image(self, query_image_path: str) -> List[dict]:
+        """Searches for images based on the provided image"""
+        query_image = self.preprocess(Image.open(query_image_path)).unsqueeze(0).to(self.device)
+        with torch.no_grad():
+            query_image_features = self.model.encode_image(query_image).cpu().numpy()
+
+        search_result = self.image_collection.query(
+            query_embeddings=query_image_features.tolist(),
             n_results=5
         )
         return search_result['metadatas'][0]

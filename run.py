@@ -14,6 +14,7 @@ class ImageSearchControl(ft.UserControl):
         self.images = None
         self.uploaded_image_path = None
         self.query_image = None
+        self.file_picker = ft.FilePicker(on_result=self.on_file_upload)
 
     def build(self):
         self.folder_path_input = ft.TextField(label="Enter Folder Path", expand=True)
@@ -48,6 +49,7 @@ class ImageSearchControl(ft.UserControl):
                 ft.Row(
                     controls=[self.images],
                 ),
+                self.file_picker,  # Add file picker to the page
             ],
         )
 
@@ -74,14 +76,16 @@ class ImageSearchControl(ft.UserControl):
         self.update()
 
     def handle_upload_image(self, event):
-        # Open file picker to select an image
-        def on_file_upload(e: ft.FileUploadEvent):
-            if e.file:
-                self.uploaded_image_path = e.file.path  # Store the path of the uploaded image
-                self.query_image.src = e.file.path  # Display the uploaded image
-                self.update()
+        # Trigger file picker to select an image
+        self.file_picker.pick_files(allow_multiple=False)
 
-        ft.file_picker(on_file_upload=on_file_upload)
+    def on_file_upload(self, e: ft.FilePickerResultEvent):
+        if e.files:
+            # Store the path of the uploaded image
+            self.uploaded_image_path = e.files[0].path
+            # Display the uploaded image
+            self.query_image.src = e.files[0].path
+            self.update()
 
     def update_images_display(self, images_to_display=None):
         self.images.controls.clear()
